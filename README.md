@@ -67,9 +67,9 @@ Advanced reasoning models process "thinking tokens" or internal states. ZDR for 
 
 | Provider | Model | Native ZDR API? | Reasoning Tokens Covered? | Verification Method |
 | :--- | :--- | :--- | :--- | :--- |
-| **OpenAI** | o1, o3-mini | **Yes** | Yes (via encrypted items) | Must pass `reasoning.encrypted_content` back to maintain state |
-| **Anthropic** | Claude Thinking | **Yes** | Yes (ZDR-eligible) | Handled purely in-memory; discarded post-generation |
-| **Google** | Gemini Thinking | **Yes** | Yes | Follows Vertex AI Abuse Exception rules |
+| **OpenAI** | o1, o1-mini, o3-mini | **Yes** | Yes (via encrypted items) | Must pass `reasoning.encrypted_content` back to maintain state |
+| **Anthropic** | Claude 3.7 Sonnet (Thinking) | **Yes** | Yes (ZDR-eligible) | Handled purely in-memory; discarded post-generation |
+| **Google** | Gemini 2.0 Flash Thinking | **Yes** | Yes | Follows Vertex AI Abuse Exception rules |
 
 ---
 
@@ -79,10 +79,10 @@ Major Chinese providers typically do not offer a simple "one-click" ZDR toggle f
 
 | Provider | Model | Privacy Strategy | ZDR Readiness |
 | :--- | :--- | :--- | :--- |
-| **DeepSeek** | R1 / V3 | **Self-Hosting (MIT License)** | Full (if hosted on your infra via vLLM/SGLang) |
-| **Zhipu AI** | GLM-4/5 | Private VPC Deployment | Enterprise Only (Dedicated clusters) |
-| **Moonshot** | Kimi | Route via Gateways (e.g., OpenRouter) | Limited (Only the router enforces ZDR) |
-| **Alibaba** | Qwen 2.5 | Alibaba Cloud PAI-EAS | High (Dedicated isolation and compute) |
+| **DeepSeek** | DeepSeek-R1 / V3 | **Self-Hosting (MIT License)** | Full (if hosted on your infra via vLLM/SGLang) |
+| **Zhipu AI** | GLM-4 Plus / GLM-4V | Private VPC Deployment | Enterprise Only (Dedicated clusters) |
+| **Moonshot** | Kimi (moonshot-v1) | Route via Gateways (e.g., OpenRouter) | Limited (Only the router enforces ZDR) |
+| **Alibaba** | Qwen 2.5 Max / QwQ | Alibaba Cloud PAI-EAS | High (Dedicated isolation and compute) |
 
 ---
 
