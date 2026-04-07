@@ -67,9 +67,9 @@ Advanced reasoning models process "thinking tokens" or internal states. ZDR for 
 
 | Provider | Model | Native ZDR API? | Reasoning Tokens Covered? | Verification Method |
 | :--- | :--- | :--- | :--- | :--- |
-| **OpenAI** | o3-mini, GPT-4.5 | **Yes** | Yes (via encrypted items) | Must pass `reasoning.encrypted_content` back to maintain state |
-| **Anthropic** | Claude 3.7 Sonnet (Thinking) | **Yes** | Yes (ZDR-eligible) | Handled purely in-memory; discarded post-generation |
-| **Google** | Gemini 2.5 Pro / Flash Thinking | **Yes** | Yes | Follows Vertex AI Abuse Exception rules |
+| **OpenAI** | GPT-5.4 Thinking | **Yes** | Yes (via encrypted items) | Bypass abuse logging via ZDR-enabled API project |
+| **Anthropic** | Claude 4.6 (Adaptive Thinking) | **Yes** | Yes (ZDR-eligible) | In-memory processing; No persistent storage/human review |
+| **Google** | Gemini 3.1 Pro / Flash Thinking | **Yes** | Yes | Vertex AI Stateless Endpoints + CDPA compliance |
 
 ---
 
