@@ -1,4 +1,4 @@
-# Contributing to the Zero Retention Database
+# Contributing to Zero Data Retention
 
 First off, thank you for considering contributing! It's people like you that make the open-source community such a great place to learn, inspire, and create.
 
