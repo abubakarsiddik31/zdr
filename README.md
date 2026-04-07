@@ -11,15 +11,10 @@ A comprehensive, industry-standard guide to **Zero-Retention (ZDR)** endpoints a
 ## 📑 Table of Contents
 - [Executive Summary](#executive-summary)
 - [Terminology & Evaluation Criteria](#terminology--evaluation-criteria)
-- [Tier 1: Major US Cloud Providers](#tier-1-major-us-cloud-providers)
-  - [OpenAI](#openai)
-  - [Anthropic](#anthropic)
-  - [Google Vertex AI](#google-vertex-ai)
-  - [Microsoft Azure OpenAI](#microsoft-azure-openai)
-  - [Amazon Bedrock](#amazon-bedrock)
-- [Tier 2: Reasoning & Deep Research Models](#tier-2-reasoning--deep-research-models)
-- [Tier 3: Chinese & International Providers](#tier-3-chinese--international-providers)
-- [Gateways & Enterprise Routers](#gateways--enterprise-routers)
+- [Major US Cloud Providers](#major-us-cloud-providers)
+- [Reasoning & Deep Research Models](#reasoning--deep-research-models)
+- [Chinese & International Providers](#chinese--international-providers)
+- [Gateways & Enterprise Routers (Deep Dive: OpenRouter)](#gateways--enterprise-routers)
 - [Global Comparison Table](#global-comparison-table)
 - [Verification & Audit Guide](#verification--audit-guide)
 - [Architecture Blueprints](#architecture-blueprints)
@@ -47,51 +42,87 @@ A comprehensive, industry-standard guide to **Zero-Retention (ZDR)** endpoints a
 
 ---
 
-## 🏢 Tier 1: Major US Cloud Providers
+## 🏢 Major US Cloud Providers
 
-### OpenAI
+### [OpenAI](https://platform.openai.com/docs/models#data-security-and-privacy)
 - **Control Name**: Zero Data Retention (ZDR) / Modified Abuse Monitoring (MAM).
-- **Setup**: Approval required → Dashboard: **Settings → Organization → Data controls**.
-- **Caveat**: Prompt Caching and Assistants API are NOT ZDR-eligible.
+- **Setup**: Approval required. Once approved via enterprise sales, configure in the Dashboard: **Settings → Organization → Data controls**.
+- **Caveat**: Prompt Caching and Assistants API are NOT ZDR-eligible as they rely on server-side state.
 
-### Anthropic
+### [Anthropic](https://support.anthropic.com/en/articles/9036730-does-anthropic-train-on-my-data)
 - **Control Name**: ZDR Arrangement / HIPAA-Ready Organization.
-- **Setup**: Contract addendum required. Use the Messages API with `inference_geo` control.
-- **Caveat**: Flagged misuse may be retained for up to 2 years under safety exceptions.
+- **Setup**: Contract addendum required via enterprise team. Use the Messages API with `inference_geo` control.
+- **Caveat**: Even with ZDR, flagged misuse may be retained for up to 2 years under strict trust & safety exceptions unless specifically negotiated otherwise.
 
-### Google Vertex AI
+### [Google Vertex AI](https://cloud.google.com/vertex-ai/docs/generative-ai/data-governance)
 - **Control Name**: Vertex AI Zero Data Retention Posture.
-- **Setup**: Request **Abuse Monitoring Exception**. Disable BigQuery request/response logging.
-- **Caveat**: Grounding with Google Search/Maps breaks strict ZDR (30-day storage for logs).
+- **Setup**: Request an **Abuse Monitoring Exception** via Google Support. Ensure BigQuery request/response logging is disabled in the project.
+- **Caveat**: Grounding with Google Search/Maps breaks strict ZDR, as logs are stored for 30 days for debugging.
 
 ---
 
-## 🧠 Tier 2: Reasoning & Deep Research Models
+## 🧠 Reasoning & Deep Research Models
+
+Advanced reasoning models process "thinking tokens" or internal states. ZDR for these models requires specific architectural patterns to ensure reasoning states aren't stored server-side.
 
 | Provider | Model | Native ZDR API? | Reasoning Tokens Covered? | Verification Method |
 | :--- | :--- | :--- | :--- | :--- |
-| **OpenAI** | o1, o3-mini | **Yes** | Yes (via encrypted items) | Pass `reasoning.encrypted_content` |
-| **Anthropic** | Claude Thinking | **Yes** | Yes (ZDR-eligible) | In-memory processing only |
-| **Google** | Gemini Thinking | **Yes** | Yes | Follows Vertex AI Exception |
+| **OpenAI** | o1, o3-mini | **Yes** | Yes (via encrypted items) | Must pass `reasoning.encrypted_content` back to maintain state |
+| **Anthropic** | Claude Thinking | **Yes** | Yes (ZDR-eligible) | Handled purely in-memory; discarded post-generation |
+| **Google** | Gemini Thinking | **Yes** | Yes | Follows Vertex AI Abuse Exception rules |
+
+---
+
+## 🌏 Chinese & International Providers
+
+Major Chinese providers typically do not offer a simple "one-click" ZDR toggle for public APIs due to local compliance and safety regulations. Enterprise privacy is achieved via **Private Cloud**, **VPC Deployments**, or **Self-Hosting**.
+
+| Provider | Model | Privacy Strategy | ZDR Readiness |
+| :--- | :--- | :--- | :--- |
+| **DeepSeek** | R1 / V3 | **Self-Hosting (MIT License)** | Full (if hosted on your infra via vLLM/SGLang) |
+| **Zhipu AI** | GLM-4/5 | Private VPC Deployment | Enterprise Only (Dedicated clusters) |
+| **Moonshot** | Kimi | Route via Gateways (e.g., OpenRouter) | Limited (Only the router enforces ZDR) |
+| **Alibaba** | Qwen 2.5 | Alibaba Cloud PAI-EAS | High (Dedicated isolation and compute) |
 
 ---
 
 ## 🔀 Gateways & Enterprise Routers
 
-Enterprise gateways allow you to enforce ZDR policies across multiple upstream providers through a unified interface.
+Enterprise gateways allow you to enforce ZDR policies across multiple upstream providers through a unified interface. 
+
+### Deep Dive: [OpenRouter](https://openrouter.ai/docs/privacy)
+OpenRouter acts as a router to dozens of API providers. It natively supports a strict ZDR policy, ensuring neither OpenRouter nor the upstream provider stores your data.
+
+**How to Enforce ZDR on OpenRouter:**
+1. **Account-Wide Setting**: Navigate to `Settings -> Privacy` in the OpenRouter dashboard and toggle "Only allow Zero Data Retention providers."
+2. **API Level (Per Request)**: Pass the `zdr: true` flag in the request body. If the chosen model's provider does not support ZDR, the request will fail cleanly rather than compromising privacy.
+   ```json
+   {
+     "model": "anthropic/claude-3.5-sonnet",
+     "messages": [{"role": "user", "content": "Hello"}],
+     "zdr": true
+   }
+   ```
+**Crucial OpenRouter Privacy Caveats:**
+- 🚨 **Prompt Logging Discount**: OpenRouter offers a 1% cost discount if you opt into "Prompt Logging". **Enabling this gives OpenRouter the right to use your data commercially.** If privacy is your goal, ensure this is disabled.
+- **Provider Filtering**: Passing `zdr: true` automatically filters out providers who haven't signed ZDR agreements with OpenRouter. Providers commonly supporting ZDR via OpenRouter include Google (Vertex), Amazon (Bedrock), DeepInfra, and NovitaAI.
+
+### Other Notable Gateways
 
 | Gateway | ZDR Feature | Primary Use Case |
 | :--- | :--- | :--- |
-| **OpenRouter** | `zdr: true` parameter | Unified routing with privacy enforcement. |
-| **Together AI** | Dashboard Privacy Toggle | High-performance inference for open-weights models. |
-| **Cloudflare AI Gateway** | Zero Data Retention Toggle | Observability + Privacy for multiple providers. |
-| **Portkey.ai** | Log Redaction & Vault | Enterprise-grade orchestration and compliance. |
+| **Together AI** | [Dashboard Privacy Toggle](https://docs.together.ai/docs/privacy) | High-performance inference for open-weights models. |
+| **Cloudflare AI Gateway** | [Zero Data Retention Toggle](https://developers.cloudflare.com/ai-gateway/observability/logging/) | Edge observability + Privacy for multiple providers. |
+| **Portkey.ai** | Log Redaction & Vault | Enterprise-grade orchestration, guardrails, and compliance. |
 
 ---
+
+## 🗺️ Global Comparison Table
+
 | Provider | Mechanism | How to Enable | Private Networking |
 | :--- | :--- | :--- | :--- |
 | **OpenAI** | ZDR/MAM | Sales Approval | Public SaaS Only |
-| **Azure OpenAI** | Opt-out | ContentLogging: false | Azure Private Endpoint |
+| **Azure OpenAI** | Opt-out | `ContentLogging: false` | Azure Private Endpoint |
 | **AWS Bedrock** | Default | No Logging Opt-in | AWS PrivateLink |
 | **DeepSeek** | Open Source | Deploy via vLLM | Full VPC Isolation |
 
@@ -100,10 +131,10 @@ Enterprise gateways allow you to enforce ZDR policies across multiple upstream p
 ## 🛡️ Verification & Audit Guide
 
 A credible ZDR audit requires **Four Pillars of Evidence**:
-1. **Configuration Artifacts**: CLI output showing `ContentLogging: false`.
-2. **Negative Tests**: Attempt to retrieve a completion by ID; confirm `404 Not Found`.
-3. **Environment Logs**: Ensure your own WAF/Gateway isn't logging payloads.
-4. **Contractual Proof**: Signed DPA or ZDR Addendum.
+1. **Configuration Artifacts**: CLI/Dashboard outputs showing features like `ContentLogging: false`.
+2. **Negative Tests**: Attempt to retrieve a completion by ID or retrieve a Thread; confirm `404 Not Found` or standard failures.
+3. **Environment Logs**: Ensure your own WAF/Gateway isn't logging payloads (Log Redaction).
+4. **Contractual Proof**: Signed BAA, DPA, or specific ZDR Addendums with the provider.
 
 ---
 
