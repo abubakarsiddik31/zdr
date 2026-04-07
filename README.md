@@ -76,21 +76,18 @@ A comprehensive, industry-standard guide to **Zero-Retention (ZDR)** endpoints a
 
 ---
 
-## 🌏 Tier 3: Chinese & International Providers
+## 🔀 Gateways & Enterprise Routers
 
-Chinese providers typically do not offer a "one-click" ZDR toggle for public APIs. Privacy is achieved via **Private Cloud** or **Self-Hosting**.
+Enterprise gateways allow you to enforce ZDR policies across multiple upstream providers through a unified interface.
 
-| Provider | Model | Privacy Strategy | ZDR Readiness |
-| :--- | :--- | :--- | :--- |
-| **DeepSeek** | R1 | **Self-Hosting (MIT)** | Full (on your infra) |
-| **Zhipu AI** | GLM-4/5 | Private VPC Deployment | Enterprise Only |
-| **Moonshot** | Kimi | Route via OpenRouter ZDR | Limited (Router only) |
-| **Alibaba** | Qwen 2.5 | Alibaba Cloud PAI-EAS | High (Dedicated isolation) |
+| Gateway | ZDR Feature | Primary Use Case |
+| :--- | :--- | :--- |
+| **OpenRouter** | `zdr: true` parameter | Unified routing with privacy enforcement. |
+| **Together AI** | Dashboard Privacy Toggle | High-performance inference for open-weights models. |
+| **Cloudflare AI Gateway** | Zero Data Retention Toggle | Observability + Privacy for multiple providers. |
+| **Portkey.ai** | Log Redaction & Vault | Enterprise-grade orchestration and compliance. |
 
 ---
-
-## 🗺️ Global Comparison Table
-
 | Provider | Mechanism | How to Enable | Private Networking |
 | :--- | :--- | :--- | :--- |
 | **OpenAI** | ZDR/MAM | Sales Approval | Public SaaS Only |
