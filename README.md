@@ -6,7 +6,7 @@
 
 **Which LLM providers offer zero data retention, how to turn it on, and what it still doesn't cover.**
 
-16 providers · checked against their own docs · last checked 25 November 2026
+16 providers · every claim linked to the provider's own docs
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maintained](https://img.shields.io/badge/maintained-yes-green.svg)](https://github.com/abubakarsiddik31/zdr/graphs/commit-activity)
