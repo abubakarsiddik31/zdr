@@ -9,8 +9,22 @@ A practical reference for keeping your data private when you use LLM APIs: which
 
 > **Last checked:** 25 November 2026. Provider terms changed a lot in 2026, and they will keep changing. Check the linked source before you rely on a detail. A [web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers) lives on my site.
 
+## Provider guides
+
+Each provider has its own page with defaults, how to turn ZDR on, exceptions, how to check it, and sources.
+
+| | | | |
+| :--- | :--- | :--- | :--- |
+| [OpenAI](providers/openai.md) | [Anthropic](providers/anthropic.md) | [Google Vertex AI](providers/google-vertex-ai.md) | [Azure OpenAI](providers/azure-openai.md) |
+| [AWS Bedrock](providers/aws-bedrock.md) | [Cohere](providers/cohere.md) | [Mistral AI](providers/mistral-ai.md) | [Groq](providers/groq.md) |
+| [Fireworks AI](providers/fireworks-ai.md) | [Together AI](providers/together-ai.md) | [Hugging Face](providers/hugging-face-inference-endpoints.md) | [Replicate](providers/replicate.md) |
+| [Ollama](providers/ollama.md) | [OpenRouter](providers/openrouter.md) | [Gateways](providers/gateways.md) | [DeepSeek, Alibaba and others](providers/chinese-and-international.md) |
+
+Topic guides: [threat model](docs/threat-model.md) · [self-hosting](docs/self-hosting.md) · [compliance](docs/compliance.md) · [beyond ZDR](docs/beyond-zdr.md) · [verification](docs/verification.md) · [architectures](docs/architectures.md)
+
 ## Contents
 
+- [Provider guides](#provider-guides)
 - [Quick answer: who offers ZDR](#quick-answer-who-offers-zdr)
 - [What changed in 2026](#what-changed-in-2026)
 - [Which approach fits](#which-approach-fits)
