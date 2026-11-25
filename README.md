@@ -5,14 +5,15 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Web version](https://img.shields.io/badge/web_version-abubakar--siddik.com-black.svg)](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers)
 
-A practical reference for keeping your data private when you use LLM APIs: which providers offer zero data retention, how to turn it on, what it does not cover, and how to prove it to an auditor. Written for engineers in regulated industries.
+A practical reference for keeping your data private when you use LLM APIs: which providers offer zero data retention, how to turn it on, what it doesn't cover, and how to show an auditor it is in place. Every page links to the provider's own documentation.
 
-> **Last checked:** April 2026. Provider terms change often; every page links to the official source, so check it before you rely on a detail. A [web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers) with rendered diagrams lives on my site and is updated first.
+> **Last checked:** 25 November 2026. Provider terms changed a lot in 2026, and they will keep changing. Check the linked source before you rely on a detail. A [web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers) lives on my site.
 
 ## Contents
 
 - [Quick answer: who offers ZDR](#quick-answer-who-offers-zdr)
-- [Which approach is right for me?](#which-approach-is-right-for-me)
+- [What changed in 2026](#what-changed-in-2026)
+- [Which approach fits](#which-approach-fits)
 - [Providers](#providers)
 - [Topics](#topics)
 - [In-depth guides](#in-depth-guides)
@@ -21,85 +22,58 @@ A practical reference for keeping your data private when you use LLM APIs: which
 
 ## Quick answer: who offers ZDR
 
-```mermaid
-quadrantChart
-    title Provider Privacy vs. Setup Effort
-    x-axis "Easy Setup" --> "Complex Setup"
-    y-axis "Weaker Privacy" --> "Stronger Privacy"
+A summary of each provider page. The details and exceptions are on the page.
 
-    Fireworks AI: [0.15, 0.72]
-    AWS Bedrock: [0.35, 0.82]
-    Together AI: [0.20, 0.68]
-    Groq: [0.18, 0.62]
-    OpenRouter: [0.12, 0.58]
-    Replicate: [0.10, 0.45]
-    HuggingFace IE: [0.40, 0.70]
-    Anthropic: [0.50, 0.75]
-    OpenAI: [0.55, 0.73]
-    Azure OpenAI: [0.70, 0.85]
-    Google Vertex: [0.65, 0.80]
-    Cohere North: [0.78, 0.88]
-    Self-Hosted: [0.90, 0.95]
-```
+| Provider | Default | Zero retention | How you get it |
+| :--- | :--- | :--- | :--- |
+| [OpenAI](providers/openai.md) | Abuse logs up to 30 days | ZDR, Modified Abuse Monitoring, Private Safety Processing | Approval through sales |
+| [Anthropic](providers/anthropic.md) | Deleted within 30 days | Legacy ZDR; Enterprise Frontier Safeguards for models that need retention | Sales; EFS by request (beta) |
+| [Google Vertex AI](providers/google-vertex-ai.md) | 24h cache; flagged prompts up to 90 days | Disable cache, abuse-logging exemption | API call plus Master Agreement or account team |
+| [Azure OpenAI](providers/azure-openai.md) | Flagged content can be stored for human review | Modified Abuse Monitoring, not for models released from 1 Nov 2026 | Application form, managed customers |
+| [AWS Bedrock](providers/aws-bedrock.md) | Most models keep nothing; Claude Fable and most OpenAI models keep data up to 30 days | Retention mode `none`; per-model ZDR approval | API setting; account team for some models |
+| [Cohere](providers/cohere.md) | 30 days; training is opt-out | Enterprise ZDR | Email support with your sales rep |
+| [Mistral AI](providers/mistral-ai.md) | 30 rolling days | ZDR for stateless endpoints | Request with a reason, pay-as-you-go |
+| [Groq](providers/groq.md) | Logs up to 30 days for troubleshooting | ZDR | Self-serve in Data Controls |
+| [Fireworks AI](providers/fireworks-ai.md) | Nothing stored for open models | Default; enterprise ZDR policy enforces it | Default |
+| [Together AI](providers/together-ai.md) | ZDR for new organizations | Prompt storage off | Self-serve in Organization Settings |
+| [Hugging Face](providers/hugging-face-inference-endpoints.md) | No payloads stored; logs 30 days | No separate setting | Not applicable |
+| [Ollama](providers/ollama.md) | Local: never leaves your machine; Cloud: not logged | Default | Default |
+| [Replicate](providers/replicate.md) | API predictions deleted after 1 hour | None | Not available |
+| [OpenRouter](providers/openrouter.md) | Prompts not logged unless you opt in | ZDR routing per model group or per request | Self-serve |
+| [DeepSeek API](providers/chinese-and-international.md) | Kept while the account exists, stored in China | None; use a ZDR host or self-host | Not available |
+| [Alibaba Model Studio](providers/chinese-and-international.md) | Up to 30 days | ZDR per workspace | International site, enterprise |
 
-| Provider | Default Retention | ZDR Mechanism | How to Enable | Private Networking | Compliance |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **[OpenAI](providers/openai.md)** | 30 days (abuse) | ZDR / MAM | Sales approval → Dashboard | Public SaaS (data residency available) | SOC 2 |
-| **[Anthropic](providers/anthropic.md)** | 7 days | ZDR Arrangement | Enterprise contract | Public SaaS | SOC 2, HIPAA (BAA) |
-| **[Google Vertex AI](providers/google-vertex-ai.md)** | 24h cache | Abuse monitoring exception | Support request / invoiced billing | VPC Service Controls, Private Google Access | SOC 2, HIPAA, ISO 27001 |
-| **[Azure OpenAI](providers/azure-openai.md)** | 30 days (abuse) | Abuse monitoring opt-out | Support ticket (EA/MCA required) | Azure Private Endpoints | SOC 2, HIPAA, FedRAMP |
-| **[AWS Bedrock](providers/aws-bedrock.md)** | **None (ZDR default)** | Default | No action needed | AWS PrivateLink | SOC 2, HIPAA, FedRAMP |
-| **[Mistral AI](providers/mistral-ai.md)** | 30 days | ZDR toggle | Account setting | Self-host open-weights | GDPR |
-| **[Groq](providers/groq.md)** | 30 days | ZDR toggle | Dashboard Data Controls | Public SaaS | SOC 2 |
-| **[Fireworks AI](providers/fireworks-ai.md)** | **None (ZDR default)** | Default | No action needed | Public SaaS | SOC 2, HIPAA |
-| **[Together AI](providers/together-ai.md)** | Configurable | ZDR toggle | Privacy settings | VPC deployment available | SOC 2, HIPAA |
-| **[Cohere](providers/cohere.md)** | 30 days (SaaS) | Enterprise ZDR / Private deploy | Enterprise contract / North platform | On-prem, VPC, air-gapped | SOC 2, ISO 27001, GDPR |
-| **[HuggingFace IE](providers/hugging-face-inference-endpoints.md)** | No payloads stored | Default (no payload storage) | N/A | AWS/Azure PrivateLink | SOC 2 Type 2, GDPR |
-| **[Replicate](providers/replicate.md)** | 1 hour (API) | Auto-deletion | Default for API | Public SaaS | — |
-| **[OpenRouter](providers/openrouter.md)** | No prompts stored | ZDR provider routing | Dashboard or per-request flag | Public SaaS | — |
-| **[DeepSeek](providers/chinese-and-international.md)** | N/A (self-host) | Self-hosting (MIT) | Deploy on your infra | Full VPC isolation | Your responsibility |
+## What changed in 2026
 
-## Which approach is right for me?
+- Some new frontier models now require retention. Anthropic's Claude Fable and Mythos lines need 30-day retention unless you use Enterprise Frontier Safeguards, which keeps encrypted copies in your own bucket. Bedrock and Vertex AI apply similar rules to these models.
+- AWS Bedrock replaced "nothing is stored" with an explicit retention mode. Set it to `none` yourself.
+- Microsoft is ending Modified Abuse Monitoring for Azure models released on or after 1 November 2026.
+- OpenAI added Private Safety Processing, and its data residency now covers ten regions.
+- Together AI disclosed that stored prompt samples were downloaded by an unauthorized party, and made ZDR the default for new organizations.
 
-"Zero-retention" is not a single feature — it is a **bundle of technical controls + contract terms** ensuring customer content (prompts, outputs, files) is not stored at rest by the vendor. Different approaches offer different trade-offs:
+## Which approach fits
 
 ```mermaid
 flowchart TD
-    Start(["Need Private AI?"]) --> Q1{"Can you\nself-host?"}
-
-    Q1 -->|"Yes, have GPUs"| SH["Self-Host Open Weights\n(Llama 4 · DeepSeek · Mistral · Qwen)"]
-    Q1 -->|"Yes, CPU only"| OL["Ollama + Quantized Models\n(7B–14B on consumer hardware)"]
-    Q1 -->|No| Q2{"Need frontier\nmodel quality?"}
-
-    Q2 -->|Yes| Q3{"Regulatory\nrequirements?"}
-    Q2 -->|No| Q4{"Budget\nconstrained?"}
-
-    Q3 -->|"HIPAA / FedRAMP"| Cloud["Azure OpenAI · AWS Bedrock\n+ Private Endpoints + BAA"]
-    Q3 -->|"Multi-provider"| GW["OpenRouter · Cloudflare AI Gateway\nwith ZDR routing"]
-    Q3 -->|"Single provider OK"| Direct["Direct ZDR Contract\n(OpenAI · Anthropic · Google)"]
-
-    Q4 -->|Yes| Budget["Fireworks · Together AI\n(open-weights, low cost, ZDR included)"]
-    Q4 -->|"Not really"| Fast["Groq · Fireworks · Together\nZDR toggle in dashboard"]
-
-    style Start fill:#4a90d9,stroke:#2c5f8a,color:#fff
-    style SH fill:#2ecc71,stroke:#1a9c54,color:#fff
-    style OL fill:#2ecc71,stroke:#1a9c54,color:#fff
-    style Cloud fill:#e67e22,stroke:#b3611a,color:#fff
-    style GW fill:#9b59b6,stroke:#7a3d92,color:#fff
-    style Direct fill:#3498db,stroke:#2471a3,color:#fff
-    style Budget fill:#1abc9c,stroke:#148f77,color:#fff
-    style Fast fill:#1abc9c,stroke:#148f77,color:#fff
+    Start(["Sensitive data in prompts"]) --> Q1{"Can any third party<br/>see the data?"}
+    Q1 -->|No| SH["Self-host open weights"]
+    Q1 -->|Yes| Q2{"Need the strongest<br/>frontier models?"}
+    Q2 -->|Yes| Q3{"Regulated data<br/>(PHI, federal)?"}
+    Q3 -->|Yes| Cloud["Cloud AI service with a BAA<br/>or FedRAMP authorization"]
+    Q3 -->|No| Direct["Provider API with ZDR"]
+    Q2 -->|No| Open["Open-model host with ZDR"]
+    Direct --> GW{"Several providers?"}
+    Open --> GW
+    GW -->|Yes| Router["Gateway with logging off,<br/>ZDR providers only"]
 ```
 
-### Approach Comparison
-
-| Approach | Privacy Strength | Model Quality | Operational Cost | Setup Complexity |
-| :--- | :--- | :--- | :--- | :--- |
-| **Self-hosted (air-gapped)** | Strongest | Open-weight only | Hardware + ops | High |
-| **Self-hosted (VPC)** | Very strong | Open-weight only | Cloud GPU cost | Medium |
-| **Cloud ZDR + Private Link** | Strong (contractual) | Frontier models | API pricing | Low-Medium |
-| **SaaS ZDR API** | Good (contractual) | Frontier models | API pricing | Low |
-| **Gateway with ZDR routing** | Good (delegated) | Multi-provider | API + gateway fee | Low |
+| Approach | Who can see the data | Models | Effort |
+| :--- | :--- | :--- | :--- |
+| [Self-hosted](docs/self-hosting.md) | Only you | Open weights | High |
+| [Cloud AI service, private network](docs/architectures.md#1-a-cloud-provider-over-a-private-network) | The cloud provider, under contract | Frontier and open | Medium |
+| Provider API with ZDR | The provider, during the request | That provider's models | Low |
+| Open-model host with ZDR | The host, during the request | Open weights | Low |
+| [Gateway](providers/gateways.md) | The gateway and each provider | Many | Low to medium |
 
 ## Providers
 
@@ -112,7 +86,7 @@ One page per provider: default retention, how to enable ZDR, what is and isn't c
 | [Google Vertex AI](providers/google-vertex-ai.md) | [Groq](providers/groq.md) | [Replicate](providers/replicate.md) |
 | [Azure OpenAI](providers/azure-openai.md) | [Hugging Face Inference Endpoints](providers/hugging-face-inference-endpoints.md) | [Chinese and international providers](providers/chinese-and-international.md) |
 | [AWS Bedrock](providers/aws-bedrock.md) | [Mistral AI](providers/mistral-ai.md) | |
-| [Cohere](providers/cohere.md) | | |
+| [Cohere](providers/cohere.md) | [Ollama (local and cloud)](providers/ollama.md) | |
 
 ## Topics
 
