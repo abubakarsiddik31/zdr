@@ -37,4 +37,4 @@ Cohere's Trust Center offers its ISO 27001 and ISO 42001 certificates and a SOC 
 
 ---
 
-[← All providers](../README.md#-provider-guides) · Spotted a change in this provider's terms? [Open an issue](https://github.com/abubakarsiddik31/zdr/issues/new) with a link to the source.
+[← All providers](../README.md#provider-guides) · Spotted a change in this provider's terms? [Open an issue](https://github.com/abubakarsiddik31/zdr/issues/new) with a link to the source.
