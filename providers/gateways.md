@@ -4,7 +4,7 @@
 
 A gateway sits between your application and the model providers, so it sees every prompt and response. Most gateways log full request and response bodies by default, because that's what makes their dashboards useful. If you add one to a ZDR setup, turn off payload logging first, then check that the upstream providers are also on ZDR.
 
-For OpenRouter, which is a hosted router with its own ZDR routing, see [openrouter.md](openrouter.md).
+For OpenRouter, which is a hosted router with its own ZDR routing, see [openrouter.md](openrouter.md). LowRouter, another hosted router with ZDR routing, is covered [below](#lowrouter).
 
 ## Summary
 
@@ -13,6 +13,7 @@ For OpenRouter, which is a hosted router with its own ZDR routing, see [openrout
 | Cloudflare AI Gateway | Yes, logs are on for each gateway. | Turn logs off in the gateway settings, or send `cf-aig-collect-log: false` per request. `cf-aig-collect-log-payload: false` keeps metadata but drops bodies. [1] |
 | Portkey (now Prisma AIRS AI Gateway) | Yes, the log view shows full request and response objects. | Send `x-portkey-debug: false` per request ("do not track"); only tokens, cost and latency are kept. A hybrid deployment keeps logs in your VPC. [2][3] |
 | LiteLLM proxy (self-hosted) | No, prompts are not stored in the spend logs unless `store_prompts_in_spend_logs` is on. Callbacks such as Langfuse get full messages unless you redact them. | Leave `store_prompts_in_spend_logs` off and set `turn_off_message_logging: true`. [4][5] |
+| LowRouter (hosted router) | No, prompts and completions are not retained after the request, except where strictly necessary for security, abuse prevention or legal compliance. Per-request metadata is kept for routing and billing. | Nothing to switch off for its own logs. To keep upstream providers on ZDR too, send `provider.data_retention: "strict"` or set it in a routing profile. [6][8] |
 
 ## Cloudflare AI Gateway
 
@@ -51,6 +52,23 @@ litellm_settings:
 - Logging callbacks (Langfuse, S3, OpenTelemetry and others) get message content unless `turn_off_message_logging` is on. A single request can be redacted with the `x-litellm-enable-message-redaction: true` header. [5]
 - LiteLLM can mask PII before the request leaves your network. See [Data protection beyond ZDR](../docs/beyond-zdr.md).
 
+## LowRouter
+
+- LowRouter does not retain prompts or completions after the request completes, except where strictly necessary for security, abuse prevention or legal compliance. [6]
+- For routing and billing it keeps per-request metadata: timestamps, model and provider identifiers, token counts, cost, and estimated energy and carbon footprint. [6]
+- Each upstream provider's own retention terms apply to the content it receives. [7]
+- Send `provider.data_retention: "strict"` per request to use only zero-retention routes; `provider.zdr: true` does the same. A routing profile with `require_data_retention: "strict"` applies the constraint to every request on its keys, and a request can't remove it. [8]
+- Retention is rated per route, from the provider's own terms. Only `strict` counts as zero retention, and `unknown` counts as not zero. [8]
+- If no route qualifies, the request fails with `403 routing_policy_exhausted`. It never falls back to a route outside the constraint. [8]
+- The response reports the route's `data_retention` in `lowrouter_metadata`, with its status, source and the date the terms were read. [8]
+
+```bash
+curl https://api.lowrouter.ai/v1/chat/completions \
+  -H "Authorization: Bearer $LOWROUTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "auto/openai/gpt-oss-120b", "provider": {"data_retention": "strict"}, "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
 ## How to check it
 
 - Send a test request with a recognizable string, then search the gateway's log view and any export (Logpush, S3, your observability tool) for it.
@@ -63,6 +81,9 @@ litellm_settings:
 3. Portkey, [Hybrid deployment architecture](https://portkey.ai/docs/self-hosting/hybrid-deployments/architecture) and [SCM deployment mode architecture](https://portkey.ai/docs/self-hosting/hybrid-deployments/scm-architecture). Accessed 25 November 2026.
 4. LiteLLM, [Config settings](https://docs.litellm.ai/docs/proxy/config_settings). Accessed 25 November 2026.
 5. LiteLLM, [Logging](https://docs.litellm.ai/docs/proxy/logging). Accessed 25 November 2026.
+6. LowRouter, [Privacy Policy](https://lowrouter.ai/privacy), sections 1 and 15. Accessed 25 November 2026.
+7. LowRouter, [Trust center](https://lowrouter.ai/trust), section 3. Accessed 25 November 2026.
+8. LowRouter, [Routing: zero data retention](https://lowrouter.ai/docs/models/routing#zero-data-retention). Accessed 25 November 2026.
 
 ---
 
