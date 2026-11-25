@@ -1,102 +1,87 @@
 # Self-Hosting Open-Weight Models
 
-> Part of [Zero Data Retention (ZDR) for LLM Providers](../README.md) · Last checked: April 2026 · [Web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers#self-hosting-open-weight-models)
+> Part of [Zero Data Retention (ZDR) for LLM Providers](../README.md) · Last checked: 25 November 2026 · [Web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers#self-hosting-open-weight-models)
 
-Self-hosting gives you the **strongest privacy guarantee**: data never leaves your infrastructure. No contracts, no trust required, no retention windows.
+Running the model yourself is the only option where no provider is involved: no contract to trust, no retention window, no abuse monitoring. The cost is that everything the provider did is now your job: GPUs, serving, updates, monitoring, security, and the retention of your own logs.
 
-## When to Self-Host
+## When it makes sense
 
-- You're in an air-gapped or classified environment
-- Regulatory requirements prohibit sending data to any third party
-- You need full control over model behavior and infrastructure
-- You're cost-sensitive at high volume (break-even vs. API pricing at ~1M+ tokens/day)
+- The data cannot go to any third party, by regulation or contract.
+- You work in an air-gapped or classified environment.
+- You need a specific model version to stay fixed for years.
+- Your volume is high and steady enough that owning GPUs costs less than API pricing.
 
-## Trade-offs
+It usually doesn't make sense if you need the strongest frontier models, which are only available through APIs, or if your traffic is small and bursty.
 
-- **Quality gap**: Open-weight models trail frontier models (GPT-4o, Claude Opus, Gemini Pro) on complex reasoning
-- **Operational burden**: GPU procurement, driver management, model updates, monitoring
-- **No built-in safety filters**: You're responsible for content moderation
+A middle ground is a dedicated deployment from a provider in this guide, such as [Fireworks AI](../providers/fireworks-ai.md), [Together AI](../providers/together-ai.md) or [Hugging Face Inference Endpoints](../providers/hugging-face-inference-endpoints.md). You get isolation without running the hardware, but the provider still operates it.
 
-## Top Open-Weight Models for Self-Hosting
+## Choosing a model
 
-| Model | Parameters | Architecture | Min Hardware (Quantized) | License |
-| :--- | :--- | :--- | :--- | :--- |
-| **Llama 4 Scout** | 17B active / 109B total | MoE (16 experts) | 1x H100 80GB (INT4) | Llama License |
-| **Llama 4 Maverick** | 17B active / 400B total | MoE (128 experts) | 1x H100 host | Llama License |
-| **DeepSeek-R1** | 671B | MoE | 8-16x H100 (FP8) | MIT |
-| **DeepSeek-R1-Distill-Qwen-32B** | 32B | Dense | 1x A100 40GB (INT4) | MIT |
-| **Mistral Large 3** | 41B active / 675B total | MoE | 8x H100 | Apache 2.0 |
-| **Qwen 3.5** | Various (0.6B-72B+) | Dense + MoE | Varies | Apache 2.0 |
-| **Qwen3-32B** | 32B | Dense | 1x A100 40GB (INT4) | Apache 2.0 |
+Check the licence before anything else. Some popular models use custom licences with use restrictions. A sample of current open-weight models, with licences and sizes from their Hugging Face model cards: [1]
 
-## Inference Frameworks
-
-| Framework | Best For | Key Feature |
+| Model | Parameters | Licence |
 | :--- | :--- | :--- |
-| **vLLM** | Production serving, high concurrency | PagedAttention (40%+ less memory fragmentation), ~19x throughput vs. Ollama |
-| **Ollama** | Local dev, simple deployment | One-command setup, auto-quantization, OpenAI-compatible API |
-| **llama.cpp** | CPU inference, edge devices | Runs on consumer hardware without GPU |
-| **SGLang** | High-throughput structured generation | Fast constrained decoding |
-| **TGI** (HuggingFace) | HF model ecosystem integration | Native HF model support, production-ready |
+| Qwen3.5-9B | 9.7B | Apache 2.0 |
+| Gemma 4 31B | 31.3B | Apache 2.0 |
+| Qwen3.6-35B-A3B (MoE) | 36B total | Apache 2.0 |
+| GLM-4.7-Flash | 31.2B | MIT |
+| gpt-oss-20b | 20.9B | Apache 2.0 |
+| gpt-oss-120b | 116.8B | Apache 2.0 |
+| Mistral Large 3 | 675B | Apache 2.0 |
+| DeepSeek-V4-Flash | about 300B | MIT |
+| DeepSeek-V4-Pro | about 1.6T | MIT |
+| Llama 4 Scout | 108.6B total | Llama 4 Community Licence |
 
-## Quick Start: vLLM
+New models come out every month. Treat this table as a starting point, and read the model card for the licence, context length and recommended serving settings.
+
+## Serving frameworks
+
+| Framework | Good for |
+| :--- | :--- |
+| [vLLM](https://docs.vllm.ai) | Production serving with many concurrent users. OpenAI-compatible API. |
+| [SGLang](https://docs.sglang.ai) | High-throughput serving, structured output. OpenAI-compatible API. |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | CPUs, laptops and edge devices, with quantized GGUF models. |
+| [Ollama](../providers/ollama.md) | Local development and simple single-machine use. Turn cloud features off for local-only use. |
+
+Hugging Face's Text Generation Inference (TGI) is in maintenance mode and its repository is archived, so prefer one of the above for new deployments. [2]
+
+A minimal vLLM server:
 
 ```bash
 pip install vllm
+vllm serve openai/gpt-oss-20b --port 8000
 
-# Serve a model with OpenAI-compatible API
-vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-32B \
-  --tensor-parallel-size 1 \
-  --gpu-memory-utilization 0.8 \
-  --enforce-eager \
-  --port 8000
-
-# Call it like OpenAI
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{
-    "model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'
+  -d '{"model": "openai/gpt-oss-20b", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
-## Quick Start: Ollama
+## Sizing memory
 
-```bash
-# Install and run in one command
-curl -fsSL https://ollama.com/install.sh | sh
-ollama run llama4-scout
+A rough rule for the weights alone: parameters times bytes per parameter. That is about 2 bytes at FP16 or BF16, 1 byte at FP8 and 0.5 bytes at 4-bit. Add room for the KV cache, which grows with context length and the number of concurrent requests.
 
-# Or serve with OpenAI-compatible API
-ollama serve &
-curl http://localhost:11434/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama4-scout",
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'
-```
+| Parameters | FP16/BF16 weights | 4-bit weights |
+| :--- | :--- | :--- |
+| 8B | about 16 GB | about 4 GB |
+| 32B | about 64 GB | about 16 GB |
+| 70B | about 140 GB | about 35 GB |
+| 120B | about 240 GB | about 60 GB |
+| 300B | about 600 GB | about 150 GB |
 
-## Hardware Sizing Guide
+For mixture-of-experts (MoE) models, all parameters must fit in memory even though only some are active per token. Quantization saves memory but can cost quality, more so on reasoning and long-context tasks. Test on your own data before choosing.
 
-| Model Size | VRAM (FP16) | VRAM (INT4) | Recommended GPU | System RAM |
-| :--- | :--- | :--- | :--- | :--- |
-| 7B | ~14 GB | ~4 GB | 1x RTX 3080/4090 | 16 GB |
-| 13B | ~26 GB | ~7 GB | 1x RTX 4090 / A100 | 32 GB |
-| 32B | ~64 GB | ~18 GB | 1x A100 40GB / H100 | 64 GB |
-| 70B | ~140 GB | ~38 GB | 2x A100 80GB / 1x H100 | 128 GB |
-| 400B+ (MoE) | ~800 GB | ~200 GB | 8x H100 | 512 GB |
-| 671B (DeepSeek-R1) | ~1.3 TB | ~340 GB | 8-16x H100 (FP8) | 1 TB |
+## Hardening
 
-> **Quantization sweet spot**: Q4_K_M retains ~95% of full-precision quality while cutting memory by ~4x. For reasoning models (DeepSeek-R1), prefer FP8 or higher — quantization artifacts hurt reasoning accuracy disproportionately.
+- Run the server in a private subnet with no outbound internet access. Download weights through a controlled path.
+- Put authentication in front of the inference port. vLLM and Ollama do not require it by default.
+- Terminate TLS at a proxy or load balancer.
+- Log who called which model and when, not the prompt. Your logs are now the retention problem. See [Data protection beyond ZDR](beyond-zdr.md).
+- Download weights from the official repository and verify checksums. Prefer `safetensors` files over pickle-based formats, which can run code when loaded.
 
-## Security Hardening for Self-Hosted
+## Sources
 
-- **Network isolation**: Deploy in a private VPC/subnet with no internet egress. Use security groups to restrict access to your application layer only
-- **Authentication**: Put an auth proxy (e.g., OAuth2 Proxy, Envoy with JWT validation) in front of the inference endpoint
-- **TLS**: Terminate TLS at a load balancer or reverse proxy. Never expose the inference port directly
-- **Audit logging**: Log request metadata (who, when, which model) without logging prompt content
-- **Model provenance**: Verify model checksums from official sources. Don't download from untrusted mirrors
+1. Hugging Face model cards, accessed 25 November 2026: [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B), [Gemma 4 31B](https://huggingface.co/google/gemma-4-31B-it), [Qwen3.6-35B-A3B](https://huggingface.co/Qwen/Qwen3.6-35B-A3B), [GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash), [gpt-oss-20b](https://huggingface.co/openai/gpt-oss-20b), [gpt-oss-120b](https://huggingface.co/openai/gpt-oss-120b), [Mistral Large 3](https://huggingface.co/mistralai/Mistral-Large-3-675B-Instruct-2512), [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash), [DeepSeek-V4-Pro](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro), [Llama 4 Scout](https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct).
+2. Hugging Face, [text-generation-inference repository](https://github.com/huggingface/text-generation-inference). Accessed 25 November 2026.
 
 ---
 

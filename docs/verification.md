@@ -1,102 +1,74 @@
 # Verifying and Auditing a ZDR Setup
 
-> Part of [Zero Data Retention (ZDR) for LLM Providers](../README.md) · Last checked: April 2026 · [Web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers#verification--audit-guide)
+> Part of [Zero Data Retention (ZDR) for LLM Providers](../README.md) · Last checked: 25 November 2026 · [Web version](https://abubakar-siddik.com/guides/zero-data-retention-llm-providers#verification--audit-guide)
 
-A credible ZDR audit requires **Four Pillars of Evidence**:
+"We have ZDR" is a claim. An auditor will want evidence: the contract, the setting, proof that your code stays inside what the setting covers, and proof that your own systems don't keep what the provider doesn't. This page lists the evidence to collect, in four groups.
 
-```mermaid
-flowchart LR
-    subgraph P1["1. Configuration"]
-        C1["Dashboard screenshots"]
-        C2["CLI output\n(ContentLogging: false)"]
-        C3["API responses\nconfirming ZDR active"]
-    end
+## 1. Contracts
 
-    subgraph P2["2. Negative Tests"]
-        N1["Attempt data retrieval\n→ expect 404"]
-        N2["Check provider logs\n→ expect empty"]
-        N3["Query abuse monitor\n→ expect no records"]
-    end
+- The ZDR approval, addendum or written confirmation, naming the organization, account or project it covers.
+- A BAA if you process PHI, with the list of covered services. See [Compliance mapping](compliance.md).
+- A DPA for personal data under GDPR.
+- The provider's SOC 2 Type II report, with its scope and exceptions read.
+- For programs that move safety review to your side (Anthropic Enterprise Frontier Safeguards, OpenAI Private Safety Processing), the storage and review obligations you accepted.
 
-    subgraph P3["3. Environment Audit"]
-        E1["App logs"]
-        E2["Gateway logs"]
-        E3["Error tracking"]
-        E4["DB query logs"]
-    end
+## 2. Configuration
 
-    subgraph P4["4. Contracts"]
-        K1["Signed BAA"]
-        K2["Signed DPA"]
-        K3["ZDR Addendum"]
-        K4["SOC 2 Report"]
-    end
+Capture the setting itself, with the date. Commands and screens from the provider pages:
 
-    P1 --> Audit(["ZDR Audit\nComplete ✓"])
-    P2 --> Audit
-    P3 --> Audit
-    P4 --> Audit
+| Provider | What to capture |
+| :--- | :--- |
+| OpenAI | Settings, Organization, Data controls, Data Retention, for the organization and each project. [OpenAI](../providers/openai.md) |
+| Anthropic | The data retention period under Settings, Privacy Controls, for the organization and each workspace. [Anthropic](../providers/anthropic.md) |
+| Azure OpenAI | The `ContentLogging` capability set to `false` on the resource. [Azure OpenAI](../providers/azure-openai.md) |
+| AWS Bedrock | The data retention mode for each Region and project, and each model's `allowed_modes`. [AWS Bedrock](../providers/aws-bedrock.md) |
+| Google Vertex AI | The project's `cacheConfig` with `disableCache: true`, plus the abuse-logging exemption. [Google Vertex AI](../providers/google-vertex-ai.md) |
+| Groq, Together AI, Mistral | The Data Controls or Privacy page showing ZDR on. |
+| OpenRouter | Privacy settings with ZDR on for each model group, and prompt logging off. [OpenRouter](../providers/openrouter.md) |
 
-    style P1 fill:#e3f2fd,stroke:#3498db
-    style P2 fill:#fff3e0,stroke:#f39c12
-    style P3 fill:#fce4ec,stroke:#e74c3c
-    style P4 fill:#e8f5e9,stroke:#2ecc71
-    style Audit fill:#2ecc71,stroke:#1a9c54,color:#fff
-```
-
-## 1. Configuration Artifacts
-
-Capture proof that ZDR is enabled:
+For AWS Bedrock, for example:
 
 ```bash
-# Azure OpenAI — verify ContentLogging is disabled
-az cognitiveservices account show --name <resource> --resource-group <rg> \
-  --query "properties.capabilities[?name=='ContentLogging'].value"
-# Expected: "false"
+curl https://bedrock-mantle.us-east-1.api.aws/v1/data_retention -H "x-api-key: $BEDROCK_API_KEY"
+# expected: {"mode": "none", ...}
 
-# AWS Bedrock — verify no logging configured
 aws bedrock get-model-invocation-logging-configuration
-# Expected: empty or no cloudwatch/s3 config
-
-# OpenAI — screenshot Dashboard > Settings > Organization > Data Retention showing ZDR enabled
+# expected: no logging configuration, unless you chose to log to your own account
 ```
 
-## 2. Negative Tests
-
-Attempt to retrieve data that shouldn't exist:
+For Azure OpenAI:
 
 ```bash
-# OpenAI — attempt to retrieve a completion (should fail under ZDR)
-curl https://api.openai.com/v1/chat/completions/<completion-id> \
-  -H "Authorization: Bearer $OPENAI_API_KEY"
-# Expected: 404 or error
-
-# AWS Bedrock — check CloudWatch for model invocation logs
-aws logs filter-log-events \
-  --log-group-name "/aws/bedrock/modelinvocations" \
-  --start-time $(date -d '1 hour ago' +%s000)
-# Expected: empty or log group doesn't exist
+az cognitiveservices account show --name <resource> --resource-group <rg> \
+  --query "properties.capabilities[?name=='ContentLogging']"
+# expected: a ContentLogging entry with value "false"
 ```
 
-## 3. Environment Audit
+## 3. Code paths
 
-Ensure YOUR infrastructure isn't logging what you're trying to protect:
+The setting only covers some endpoints and features. Show that your code stays inside them.
 
-- [ ] Web framework request body logging — disabled or post-redaction only
-- [ ] HTTP client libraries — set to WARN+ log level in production
-- [ ] API gateway / load balancer — configured to not log request bodies
-- [ ] Error tracking (Sentry, Datadog) — `before_send` hooks strip sensitive fields
-- [ ] LLM observability tools (LangSmith, Langfuse) — PII redaction enabled
-- [ ] Database query logging — parameterized queries, no full statement logging
-- [ ] WAF / DLP proxy — not storing payloads in its own logs
+- List every provider endpoint and feature your services call. Search the code for the usual exceptions: batch jobs, file uploads, assistants and agents, conversation or thread storage, code execution, background mode, MCP connectors.
+- Where a `store` parameter exists, show it is set to `false` in code, not left to the default.
+- Show which API keys belong to which project or organization, so a key from a project without ZDR can't be used by mistake.
+- Where you can, enforce it: Bedrock's SCP condition keys, OpenRouter's per-request `zdr`, Fireworks' enterprise ZDR policy, Anthropic's HIPAA feature blocking.
 
-## 4. Contractual Proof
+## 4. Your own environment
 
-Collect signed agreements:
-- [ ] BAA (Business Associate Agreement) — for HIPAA
-- [ ] DPA (Data Processing Agreement/Addendum) — for GDPR
-- [ ] ZDR Addendum or Amendment — provider-specific
-- [ ] SOC 2 Type II report — from the provider's trust center
+Send a test request with a unique marker string, then search for it everywhere it could land:
+
+- Application logs, at the log level used in production.
+- Gateway and proxy logs, and their exports (Logpush, S3 and similar).
+- Error tracking, including events created from failed requests.
+- LLM tracing and evaluation tools.
+- Databases and caches that store chat history.
+- Analytics and session replay in the browser.
+
+Record where the marker appeared and what you changed. [Data protection beyond ZDR](beyond-zdr.md) lists the usual places and fixes.
+
+## Keep it current
+
+Provider terms changed a lot in 2026. Anthropic, Azure and Bedrock all changed how retention works for some models. Re-check the provider pages and your settings on a schedule, and whenever you adopt a new model, because some new models come with their own retention requirements.
 
 ---
 
