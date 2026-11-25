@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/banner.png" alt="Zero Data Retention (ZDR) for LLM providers" width="720">
+
 # Zero Data Retention (ZDR) for LLM Providers
 
 **Which LLM providers offer zero data retention, how to turn it on, and what it still doesn't cover.**
