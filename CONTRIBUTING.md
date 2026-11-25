@@ -17,6 +17,14 @@ First off, thank you for considering contributing! It's people like you that mak
 * Ensure the PR description clearly describes the problem and solution.
 * Include any relevant issue numbers.
 
+## Where things live
+
+* `README.md`: the overview, the quick-answer table and the index. Keep it short.
+* `providers/<provider>.md`: one page per provider. Start with the header line (link back to the README, last-checked date, web version link) and end with the footer, as the existing pages do.
+* `docs/<topic>.md`: cross-provider topics such as compliance, verification and architecture.
+
+When you change a provider's page, update its row in the README table and its "Last checked" date.
+
 ## Style Guide
 * Maintain a professional and objective tone.
 * Use Markdown for formatting.
