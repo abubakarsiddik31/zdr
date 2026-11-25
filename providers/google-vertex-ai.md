@@ -14,21 +14,21 @@ This page is about Vertex AI. The Gemini API in Google AI Studio has different t
 
 ## Getting to zero retention
 
-1. Disable caching for the project. This needs `roles/aiplatform.admin`. To disable it for a whole organization, ask your account team. [1]
+Three steps: disable caching, get out of abuse-monitoring logging, and avoid the features in the next section that store data and cannot be switched off.
 
-   ```bash
-   curl -X PATCH \
-     -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
-     -H "Content-Type: application/json" \
-     "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/cacheConfig" \
-     -d '{"name": "projects/'"${PROJECT_ID}"'/cacheConfig", "disableCache": true}'
-   ```
+Disabling caching for the project needs `roles/aiplatform.admin`. To disable it for a whole organization, ask your account team. [1]
 
-   Setting `retentionType` to `EPHEMERAL` instead keeps the in-memory cache and turns off only the disk cache. [1]
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
+  -H "Content-Type: application/json" \
+  "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/cacheConfig" \
+  -d '{"name": "projects/'"${PROJECT_ID}"'/cacheConfig", "disableCache": true}'
+```
 
-2. Get out of abuse-monitoring prompt logging. Customers with a Google Cloud Master Agreement are exempt by default for standard models. Others should ask their account team. [2]
+Setting `retentionType` to `EPHEMERAL` instead keeps the in-memory cache and turns off only the disk cache. [1]
 
-3. Avoid or replace the features in the next section that store data and cannot be switched off.
+For abuse-monitoring logging, customers with a Google Cloud Master Agreement are exempt by default for standard models. Others should ask their account team. [2]
 
 ## Features that still store data
 
